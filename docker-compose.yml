@@ -1,0 +1,47 @@
+# Sobe apenas os bancos MySQL. Cada microsserviço tem o seu próprio servidor e schema,
+# sem compartilhar tabelas. As aplicações rodam pelo Maven ou pelo IntelliJ (ver README).
+services:
+
+  mysql-linhas:
+    image: mysql:8.4.6
+    container_name: mysql-linhas
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_linhas
+      MYSQL_USER: transitasp
+      MYSQL_PASSWORD: transitasp
+      TZ: America/Sao_Paulo
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_linhas_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mysql-ocorrencias:
+    image: mysql:8.4.6
+    container_name: mysql-ocorrencias
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_ocorrencias
+      MYSQL_USER: transitasp
+      MYSQL_PASSWORD: transitasp
+      TZ: America/Sao_Paulo
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_ocorrencias_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql_linhas_data:
+  mysql_ocorrencias_data:

@@ -1,0 +1,122 @@
+### Roteiro de teste pelo API Gateway (porta 8082).
+### No IntelliJ, abra este arquivo e clique no ícone de execução ao lado de cada requisição.
+
+@gateway = http://localhost:8082
+
+### 1. Lista as 13 linhas (carga inicial do Flyway). A linha 3 começa com VELOCIDADE_REDUZIDA
+GET {{gateway}}/ms-linhas/api/v1/linhas
+
+### 2. Busca a linha de id 1 (Linha 1 - Azul), status NORMAL
+GET {{gateway}}/ms-linhas/api/v1/linhas/1
+
+### 3. Lista as ocorrências (carga inicial do Flyway)
+GET {{gateway}}/ms-ocorrencias/api/v1/ocorrencias
+
+### 4. COMUNICAÇÃO SÍNCRONA: abre uma ocorrência na linha 1 -> 201 + Location
+###    O ms-ocorrencias chama o ms-linhas (OpenFeign) e a linha passa a PARALISADA
+POST {{gateway}}/ms-ocorrencias/api/v1/ocorrencias
+Content-Type: application/json
+
+{
+  "linhaId": 1,
+  "tipo": "FALHA_ENERGIA",
+  "descricao": "Falha de energia na via",
+  "local": "Estação Sé",
+  "impacto": "PARALISADA"
+}
+
+### 5. Confere no ms-linhas: a linha 1 agora está PARALISADA
+GET {{gateway}}/ms-linhas/api/v1/linhas/1
+
+### 6. Busca a ocorrência criada (id 4 na primeira execução), com os dados da linha vindos do ms-linhas
+GET {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/4
+
+### 7. Atualiza a ocorrência: o impacto cai para VELOCIDADE_REDUZIDA e a linha acompanha
+PUT {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/4
+Content-Type: application/json
+
+{
+  "tipo": "FALHA_ENERGIA",
+  "descricao": "Energia restabelecida parcialmente",
+  "local": "Estação Sé",
+  "impacto": "VELOCIDADE_REDUZIDA"
+}
+
+### 8. Encerra a ocorrência: a linha 1 volta para NORMAL
+PUT {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/4/encerrar
+
+### 9. Confere no ms-linhas: a linha 1 voltou para NORMAL
+GET {{gateway}}/ms-linhas/api/v1/linhas/1
+
+### 10. Exclui a ocorrência -> 204
+DELETE {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/4
+
+### 11. CRUD de linha: cadastra -> 201 + Location
+POST {{gateway}}/ms-linhas/api/v1/linhas
+Content-Type: application/json
+
+{
+  "numero": 6,
+  "nome": "Laranja",
+  "tipo": "METRO",
+  "corHex": "#F58220"
+}
+
+### 12. Atualiza a linha criada (id 14 na primeira execução)
+PUT {{gateway}}/ms-linhas/api/v1/linhas/14
+Content-Type: application/json
+
+{
+  "numero": 6,
+  "nome": "Laranja (em obras)",
+  "tipo": "METRO",
+  "corHex": "#F58220"
+}
+
+### 13. Exclui a linha criada -> 204
+DELETE {{gateway}}/ms-linhas/api/v1/linhas/14
+
+### --- Erros esperados ---
+
+### 14. Validação -> 422 com a lista de campos inválidos
+POST {{gateway}}/ms-ocorrencias/api/v1/ocorrencias
+Content-Type: application/json
+
+{
+  "linhaId": 1,
+  "descricao": "",
+  "local": "Estação Sé"
+}
+
+### 15. Linha inexistente -> 404 (o 404 vem do ms-linhas e é repassado)
+POST {{gateway}}/ms-ocorrencias/api/v1/ocorrencias
+Content-Type: application/json
+
+{
+  "linhaId": 999,
+  "tipo": "OUTRO",
+  "descricao": "Teste de linha inexistente",
+  "local": "Qualquer",
+  "impacto": "VELOCIDADE_REDUZIDA"
+}
+
+### 16. Regra de negócio -> 409 (a linha 3 tem ocorrência aberta e não pode ser excluída)
+DELETE {{gateway}}/ms-linhas/api/v1/linhas/3
+
+### 17. Regra de negócio -> 409 (a ocorrência 2 já está encerrada)
+PUT {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/2/encerrar
+
+### 18. FALLBACK (pare o ms-linhas antes): a ocorrência vem com linhaDisponivel=false e um aviso -> 200
+GET {{gateway}}/ms-ocorrencias/api/v1/ocorrencias/1
+
+### 19. FALLBACK (ms-linhas ainda parado): não é possível abrir ocorrência -> 503, nada é gravado
+POST {{gateway}}/ms-ocorrencias/api/v1/ocorrencias
+Content-Type: application/json
+
+{
+  "linhaId": 2,
+  "tipo": "MANUTENCAO",
+  "descricao": "Teste com o ms-linhas fora do ar",
+  "local": "Estação Paraíso",
+  "impacto": "VELOCIDADE_REDUZIDA"
+}

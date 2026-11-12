@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Agregador do monorepo: permite abrir tudo de uma vez no IntelliJ e compilar com um único comando.
+     Cada módulo continua independente (herda direto do spring-boot-starter-parent). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>br.com.fiap.transitasp</groupId>
+    <artifactId>transitasp-microservices</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>TransitaSP - Microsserviços (HUB)</name>
+
+    <modules>
+        <module>eureka-server</module>
+        <module>api-gateway</module>
+        <module>ms-linhas</module>
+        <module>ms-ocorrencias</module>
+    </modules>
+</project>
